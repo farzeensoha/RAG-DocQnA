@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Q&A — Reading Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #12161c;
+    --panel: #181e26;
+    --panel-raised: #1f2630;
+    --rule: #2a323d;
+    --paper: #ece7db;
+    --paper-dim: #a9a296;
+    --brass: #c9a050;
+    --brass-dim: #8a6f3a;
+    --brass-soft: rgba(201, 160, 80, 0.12);
+    --danger: #c96050;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(201,160,80,0.06), transparent 60%),
+      var(--ink);
+    color: var(--paper);
+    font-family: 'Public Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .serif { font-family: 'Fraunces', serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  .frame {
+    width: 100%;
+    max-width: 640px;
+    height: 88vh;
+    max-height: 780px;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 30px 80px -30px rgba(0,0,0,0.6);
+  }
+
+  .header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, var(--panel-raised), var(--panel));
+  }
+
+  .header-title { display: flex; align-items: baseline; gap: 10px; }
+  .header-title h1 { font-size: 19px; font-weight: 600; letter-spacing: 0.01em; margin: 0; color: var(--paper); }
+  .header-title .mark {
+    font-size: 11px; color: var(--brass); letter-spacing: 0.12em;
+    text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+  }
+
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .whoami { font-size: 12px; color: var(--paper-dim); font-family: 'JetBrains Mono', monospace; }
+  .btn-ghost {
+    padding: 6px 12px;
+    border-radius: 7px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--paper-dim);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .btn-ghost:hover { border-color: var(--brass-dim); color: var(--paper); }
+
+  .tabs { display: flex; gap: 4px; padding: 12px 22px 0; border-bottom: 1px solid var(--rule); }
+  .tab {
+    display: flex; align-items: center; gap: 7px;
+    padding: 9px 16px; font-size: 13px; color: var(--paper-dim); cursor: pointer;
+    border-bottom: 2px solid transparent; font-weight: 500; transition: all 0.2s ease;
+  }
+  .tab.active { color: var(--brass); border-bottom-color: var(--brass); }
+  .tab-badge {
+    min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+    background: var(--danger); color: #2a0f0c; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .view { flex: 1; overflow-y: auto; display: none; flex-direction: column; }
+  .view.active { display: flex; }
+  .view::-webkit-scrollbar { width: 6px; }
+  .view::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+
+  .chat { flex: 1; overflow-y: auto; padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+  .chat::-webkit-scrollbar { width: 6px; }
+  .chat::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+
+  .msg { max-width: 82%; animation: rise 0.28s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .msg-system {
+    align-self: center; max-width: 90%; font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--paper-dim); text-align: center; padding: 6px 0;
+  }
+
+  .msg-user { align-self: flex-end; }
+  .msg-user .bubble {
+    background: var(--brass); color: #1a1408; padding: 11px 15px;
+    border-radius: 12px 12px 3px 12px; font-size: 14px; line-height: 1.5; font-weight: 500;
+  }
+
+  .msg-bot { align-self: flex-start; display: flex; gap: 10px; flex-direction: column; }
+  .msg-bot-row { display: flex; gap: 10px; }
+  .msg-bot .quote-mark {
+    font-family: 'Fraunces', serif; font-style: italic; color: var(--brass-dim);
+    font-size: 26px; line-height: 1; padding-top: 6px; user-select: none;
+  }
+  .msg-bot .bubble {
+    border-left: 2px solid var(--brass-dim); padding: 8px 0 8px 14px;
+    font-size: 14.5px; line-height: 1.6; color: var(--paper);
+  }
+
+  .flag-btn {
+    align-self: flex-start;
+    margin-left: 36px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--paper-dim);
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .flag-btn:hover { border-color: var(--danger); color: var(--danger); }
+  .flag-btn.flagged {
+    color: var(--brass);
+    border-color: var(--brass);
+    background: var(--brass-soft);
+    cursor: default;
+  }
+
+  .thinking { align-self: flex-start; display: flex; gap: 4px; padding: 10px 0 10px 4px; }
+  .thinking span { width: 5px; height: 5px; border-radius: 50%; background: var(--brass-dim); animation: pulse 1.1s infinite ease-in-out; }
+  .thinking span:nth-child(2) { animation-delay: 0.15s; }
+  .thinking span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes pulse { 0%, 60%, 100% { opacity: 0.25; transform: scale(0.85); } 30% { opacity: 1; transform: scale(1.15); } }
+
+  .input-bar { padding: 16px 22px 20px; border-top: 1px solid var(--rule); display: flex; gap: 10px; }
+  .input-bar input[type="text"] {
+    flex: 1; background: var(--panel-raised); border: 1px solid var(--rule); border-radius: 9px;
+    padding: 12px 14px; color: var(--paper); font-size: 14px; font-family: 'Public Sans', sans-serif;
+    outline: none; transition: border-color 0.2s ease;
+  }
+  .input-bar input[type="text"]:focus { border-color: var(--brass-dim); }
+  .input-bar input[type="text"]::placeholder { color: var(--paper-dim); opacity: 0.6; }
+
+  .btn-primary {
+    padding: 9px 18px; border-radius: 7px; background: var(--brass); color: #1a1408;
+    font-weight: 600; font-size: 12.5px; border: none; cursor: pointer; white-space: nowrap;
+    transition: transform 0.15s ease, background 0.2s ease;
+  }
+  .btn-primary:hover { background: #d9af5c; }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .flagged-panel { padding: 22px; }
+  .empty-state { text-align: center; color: var(--paper-dim); font-size: 13px; padding: 40px 0; }
+
+  .flag-item {
+    background: var(--panel-raised); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px; margin-bottom: 14px;
+  }
+  .flag-item.unseen { border-color: var(--brass-dim); }
+  .flag-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--paper-dim); font-family: 'JetBrains Mono', monospace; margin-bottom: 10px; }
+  .status-pill {
+    font-size: 10.5px; padding: 3px 9px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .status-pill.pending { color: var(--paper-dim); border: 1px solid var(--rule); }
+  .status-pill.reviewed { color: var(--brass); border: 1px solid var(--brass-dim); background: var(--brass-soft); }
+  .flag-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--brass-dim); margin-bottom: 4px; }
+  .flag-text { font-size: 13.5px; line-height: 1.55; color: var(--paper); margin-bottom: 12px; white-space: pre-wrap; }
+  .flag-notes {
+    margin-top: 4px; padding: 10px 12px; background: var(--panel); border-radius: 8px;
+    border-left: 2px solid var(--brass); font-size: 13px; line-height: 1.55; color: var(--paper);
+  }
+
+  ::selection { background: var(--brass-soft); color: var(--paper); }
+</style>
+</head>
+<body>
+
+  <div class="frame">
+
+    <div class="header">
+      <div class="header-title">
+        <h1 class="serif">Reading&nbsp;Room</h1>
+        <span class="mark">doc / q&amp;a</span>
+      </div>
+      <div class="header-right">
+        <span class="whoami" id="whoami"></span>
+        <button class="btn-ghost" onclick="logout()">Log out</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" id="tabAsk" onclick="showView('ask')">Ask</div>
+      <div class="tab" id="tabFlagged" onclick="showView('flagged')">
+        Flagged for review
+        <span class="tab-badge" id="flaggedBadge" style="display:none">0</span>
+      </div>
+    </div>
+
+    <div class="view active" id="viewAsk">
+      <div id="chatBox" class="chat">
+        <div class="msg msg-bot">
+          <span class="quote-mark">"</span>
+          <div class="bubble">Ask a question about the documents your admin has indexed — I'll answer strictly from what's there. If an answer looks off, you can flag it for review.</div>
+        </div>
+      </div>
+      <div class="input-bar">
+        <input id="userQuery" type="text" placeholder="Ask about the document…" onkeydown="if(event.key === 'Enter') sendQuery()">
+        <button class="btn-primary" onclick="sendQuery()" id="sendBtn">Send</button>
+      </div>
+    </div>
+
+    <div class="view" id="viewFlagged">
+      <div class="flagged-panel" id="flaggedList"></div>
+    </div>
+
+  </div>
+
+<script>
+  let currentUsername = null;
+
+  async function loadMe() {
+    try {
+      const res = await fetch('/me');
+      if (!res.ok) { window.location.href = '/'; return; }
+      const data = await res.json();
+      currentUsername = data.username;
+      document.getElementById('whoami').innerText = data.username;
+      refreshFlaggedBadge();
+    } catch (err) {
+      window.location.href = '/';
+    }
+  }
+
+  async function logout() {
+    await fetch('/logout', { method: 'POST' });
+    window.location.href = '/';
+  }
+
+  function showView(name) {
+    document.getElementById('tabAsk').classList.toggle('active', name === 'ask');
+    document.getElementById('tabFlagged').classList.toggle('active', name === 'flagged');
+    document.getElementById('viewAsk').classList.toggle('active', name === 'ask');
+    document.getElementById('viewFlagged').classList.toggle('active', name === 'flagged');
+    if (name === 'flagged') loadFlagged();
+  }
+
+  function lastSeenKey() { return `flagged_last_seen_${currentUsername}`; }
+  function getLastSeen() { return localStorage.getItem(lastSeenKey()) || '1970-01-01T00:00:00Z'; }
+  function setLastSeenNow() { localStorage.setItem(lastSeenKey(), new Date().toISOString()); }
+
+  async function refreshFlaggedBadge() {
+    try {
+      const res = await fetch('/logs/mine');
+      if (!res.ok) return;
+      const rows = await res.json();
+      const lastSeen = getLastSeen();
+      const newlyReviewed = rows.filter(r => r.reviewer_status === 'reviewed' && r.reviewed_at && r.reviewed_at > lastSeen);
+      const badge = document.getElementById('flaggedBadge');
+      if (newlyReviewed.length > 0) {
+        badge.style.display = 'flex';
+        badge.innerText = newlyReviewed.length;
+      } else {
+        badge.style.display = 'none';
+      }
+    } catch (err) { /* silent — badge just won't update */ }
+  }
+
+  async function sendQuery() {
+    const input = document.getElementById('userQuery');
+    const question = input.value.trim();
+    if (!question) return;
+
+    appendMessage("user", question);
+    input.value = "";
+    const thinkingEl = showThinking();
+
+    try {
+      const res = await fetch(`/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+      const data = await res.json();
+      thinkingEl.remove();
+      if (res.ok) {
+        appendMessage("bot", data.answer, data.log_id);
+      } else if (res.status === 401) {
+        window.location.href = '/';
+      } else {
+        appendMessage("bot", `Error — ${data.detail}`);
+      }
+    } catch (err) {
+      thinkingEl.remove();
+      appendMessage("bot", "Could not reach the server.");
+    }
+  }
+
+  async function flagLog(logId, btn) {
+    btn.disabled = true;
+    btn.innerText = "Flagging…";
+    try {
+      const res = await fetch(`/logs/${logId}/flag`, { method: "POST" });
+      if (res.ok) {
+        btn.innerText = "Flagged for review";
+        btn.classList.add("flagged");
+      } else {
+        btn.innerText = "Flag for review";
+        btn.disabled = false;
+      }
+    } catch (err) {
+      btn.innerText = "Flag for review";
+      btn.disabled = false;
+    }
+  }
+
+  async function loadFlagged() {
+    const list = document.getElementById('flaggedList');
+    list.innerHTML = '<div class="empty-state">Loading…</div>';
+    try {
+      const res = await fetch('/logs/mine');
+      if (res.status === 401) { window.location.href = '/'; return; }
+      const rows = await res.json();
+      if (rows.length === 0) {
+        list.innerHTML = '<div class="empty-state">You haven\'t flagged any answers yet.</div>';
+      } else {
+        const lastSeen = getLastSeen();
+        list.innerHTML = '';
+        rows.forEach(row => list.appendChild(renderFlagItem(row, lastSeen)));
+      }
+      setLastSeenNow();
+      document.getElementById('flaggedBadge').style.display = 'none';
+    } catch (err) {
+      list.innerHTML = '<div class="empty-state">Could not reach the server.</div>';
+    }
+  }
+
+  function renderFlagItem(row, lastSeen) {
+    const div = document.createElement('div');
+    const isNewlyReviewed = row.reviewer_status === 'reviewed' && row.reviewed_at && row.reviewed_at > lastSeen;
+    div.className = 'flag-item' + (isNewlyReviewed ? ' unseen' : '');
+
+    const meta = document.createElement('div');
+    meta.className = 'flag-meta';
+    const pill = row.reviewer_status === 'reviewed'
+      ? '<span class="status-pill reviewed">Reviewed</span>'
+      : '<span class="status-pill pending">Pending review</span>';
+    meta.innerHTML = `<span>${new Date(row.timestamp).toLocaleString()}</span>${pill}`;
+    div.appendChild(meta);
+
+    const qLabel = document.createElement('div');
+    qLabel.className = 'flag-label';
+    qLabel.innerText = 'Your question';
+    div.appendChild(qLabel);
+
+    const qText = document.createElement('div');
+    qText.className = 'flag-text';
+    qText.innerText = row.prompt;
+    div.appendChild(qText);
+
+    const aLabel = document.createElement('div');
+    aLabel.className = 'flag-label';
+    aLabel.innerText = 'Original answer';
+    div.appendChild(aLabel);
+
+    const aText = document.createElement('div');
+    aText.className = 'flag-text';
+    aText.innerText = row.output;
+    div.appendChild(aText);
+
+    if (row.reviewer_status === 'reviewed') {
+      const nLabel = document.createElement('div');
+      nLabel.className = 'flag-label';
+      nLabel.innerText = 'Admin response';
+      div.appendChild(nLabel);
+
+      const nText = document.createElement('div');
+      nText.className = 'flag-notes';
+      nText.innerText = row.reviewer_notes && row.reviewer_notes.trim()
+        ? row.reviewer_notes
+        : 'Reviewed — no additional notes left.';
+      div.appendChild(nText);
+    }
+
+    return div;
+  }
+
+  function showThinking() {
+    const box = document.getElementById('chatBox');
+    const div = document.createElement('div');
+    div.className = "thinking";
+    div.innerHTML = "<span></span><span></span><span></span>";
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+    return div;
+  }
+
+  function appendMessage(sender, text, logId) {
+    const box = document.getElementById('chatBox');
+    const div = document.createElement('div');
+
+    if (sender === "user") {
+      div.className = "msg msg-user";
+      div.innerHTML = `<div class="bubble"></div>`;
+      div.querySelector('.bubble').innerText = text;
+    } else if (sender === "bot") {
+      div.className = "msg msg-bot";
+      const row = document.createElement('div');
+      row.className = "msg-bot-row";
+      row.innerHTML = `<span class="quote-mark">"</span><div class="bubble"></div>`;
+      row.querySelector('.bubble').innerText = text;
+      div.appendChild(row);
+
+      if (logId) {
+        const flagBtn = document.createElement('button');
+        flagBtn.className = "flag-btn";
+        flagBtn.innerText = "Flag for review";
+        flagBtn.onclick = () => flagLog(logId, flagBtn);
+        div.appendChild(flagBtn);
+      }
+    } else {
+      div.className = "msg-system mono";
+      div.innerText = text;
+    }
+
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  loadMe();
+  // Light polling so the badge can light up even if the user is mid-chat
+  setInterval(refreshFlaggedBadge, 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Q&A — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #12161c;
+    --panel: #181e26;
+    --panel-raised: #1f2630;
+    --rule: #2a323d;
+    --paper: #ece7db;
+    --paper-dim: #a9a296;
+    --brass: #c9a050;
+    --brass-dim: #8a6f3a;
+    --brass-soft: rgba(201, 160, 80, 0.12);
+    --danger: #c96050;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    background: radial-gradient(1200px 600px at 15% -10%, rgba(201,160,80,0.06), transparent 60%), var(--ink);
+    color: var(--paper); font-family: 'Public Sans', sans-serif;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .serif { font-family: 'Fraunces', serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  .frame {
+    width: 100%; max-width: 760px; height: 88vh; max-height: 820px;
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 14px;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 30px 80px -30px rgba(0,0,0,0.6);
+  }
+
+  .header {
+    padding: 18px 22px; border-bottom: 1px solid var(--rule);
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(180deg, var(--panel-raised), var(--panel));
+  }
+  .header-title { display: flex; align-items: baseline; gap: 10px; }
+  .header-title h1 { font-size: 19px; font-weight: 600; margin: 0; color: var(--paper); }
+  .header-title .mark {
+    font-size: 11px; color: var(--brass); letter-spacing: 0.12em;
+    text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+  }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .whoami { font-size: 12px; color: var(--paper-dim); font-family: 'JetBrains Mono', monospace; }
+  .btn-ghost {
+    padding: 6px 12px; border-radius: 7px; background: transparent; border: 1px solid var(--rule);
+    color: var(--paper-dim); font-size: 12px; cursor: pointer; transition: all 0.2s ease;
+  }
+  .btn-ghost:hover { border-color: var(--brass-dim); color: var(--paper); }
+
+  .tabs { display: flex; gap: 4px; padding: 14px 22px 0; border-bottom: 1px solid var(--rule); }
+  .tab {
+    padding: 9px 16px; font-size: 13px; color: var(--paper-dim); cursor: pointer;
+    border-bottom: 2px solid transparent; font-weight: 500; transition: all 0.2s ease;
+  }
+  .tab.active { color: var(--brass); border-bottom-color: var(--brass); }
+
+  .panel { flex: 1; overflow-y: auto; padding: 22px; display: none; }
+  .panel.active { display: block; }
+  .panel::-webkit-scrollbar { width: 6px; }
+  .panel::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+
+  .upload-zone {
+    display: flex; align-items: center; gap: 10px; padding: 16px;
+    background: var(--panel-raised); border: 1px solid var(--rule); border-radius: 10px;
+  }
+  .upload-zone input[type="file"] { flex: 1; font-size: 12px; color: var(--paper-dim); font-family: 'JetBrains Mono', monospace; }
+  .upload-zone input[type="file"]::file-selector-button {
+    margin-right: 12px; padding: 7px 14px; border-radius: 7px; border: 1px solid var(--brass-dim);
+    background: transparent; color: var(--brass); font-family: 'Public Sans', sans-serif;
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+  }
+  .upload-zone input[type="file"]::file-selector-button:hover { background: var(--brass-soft); }
+
+  .btn-primary {
+    padding: 9px 18px; border-radius: 7px; background: var(--brass); color: #1a1408;
+    font-weight: 600; font-size: 12.5px; border: none; cursor: pointer; white-space: nowrap;
+    transition: transform 0.15s ease, background 0.2s ease;
+  }
+  .btn-primary:hover { background: #d9af5c; }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .upload-status { margin-top: 12px; font-size: 12px; color: var(--paper-dim); font-family: 'JetBrains Mono', monospace; }
+
+  .empty-state { text-align: center; color: var(--paper-dim); font-size: 13px; padding: 40px 0; }
+
+  .queue-item {
+    background: var(--panel-raised); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px; margin-bottom: 14px;
+  }
+  .queue-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--paper-dim); font-family: 'JetBrains Mono', monospace; margin-bottom: 10px; }
+  .queue-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--brass-dim); margin-bottom: 4px; }
+  .queue-text { font-size: 13.5px; line-height: 1.55; color: var(--paper); margin-bottom: 12px; white-space: pre-wrap; }
+  .resolve-row { display: flex; gap: 8px; }
+  .resolve-row input[type="text"] {
+    flex: 1; background: var(--panel); border: 1px solid var(--rule); border-radius: 7px;
+    padding: 8px 11px; color: var(--paper); font-size: 12.5px; outline: none;
+  }
+  .resolve-row input[type="text"]:focus { border-color: var(--brass-dim); }
+</style>
+</head>
+<body>
+
+  <div class="frame">
+    <div class="header">
+      <div class="header-title">
+        <h1 class="serif">Reading&nbsp;Room</h1>
+        <span class="mark">admin</span>
+      </div>
+      <div class="header-right">
+        <span class="whoami" id="whoami"></span>
+        <button class="btn-ghost" onclick="logout()">Log out</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" id="tabUpload" onclick="showTab('upload')">Upload documents</div>
+      <div class="tab" id="tabQueue" onclick="showTab('queue')">Review queue</div>
+    </div>
+
+    <div class="panel active" id="panelUpload">
+      <div class="upload-zone">
+        <input id="fileInput" type="file" accept=".pdf,.txt">
+        <button class="btn-primary" onclick="uploadFile()">Index document</button>
+      </div>
+      <div class="upload-status mono" id="uploadStatus"></div>
+    </div>
+
+    <div class="panel" id="panelQueue">
+      <div id="queueList"></div>
+    </div>
+  </div>
+
+<script>
+  async function loadMe() {
+    try {
+      const res = await fetch('/me');
+      if (!res.ok) { window.location.href = '/'; return; }
+      const data = await res.json();
+      document.getElementById('whoami').innerText = data.username;
+    } catch (err) {
+      window.location.href = '/';
+    }
+  }
+
+  async function logout() {
+    await fetch('/logout', { method: 'POST' });
+    window.location.href = '/';
+  }
+
+  function showTab(name) {
+    document.getElementById('tabUpload').classList.toggle('active', name === 'upload');
+    document.getElementById('tabQueue').classList.toggle('active', name === 'queue');
+    document.getElementById('panelUpload').classList.toggle('active', name === 'upload');
+    document.getElementById('panelQueue').classList.toggle('active', name === 'queue');
+    if (name === 'queue') loadQueue();
+  }
+
+  async function uploadFile() {
+    const fileInput = document.getElementById('fileInput');
+    const statusEl = document.getElementById('uploadStatus');
+    if (!fileInput.files[0]) {
+      statusEl.innerText = "Select a PDF or TXT file first.";
+      return;
+    }
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+    statusEl.innerText = `Indexing "${fileInput.files[0].name}"…`;
+
+    try {
+      const res = await fetch(`/admin/upload`, { method: "POST", body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        statusEl.innerText = data.message;
+      } else if (res.status === 401) {
+        window.location.href = '/';
+      } else {
+        statusEl.innerText = `Upload failed — ${data.detail}`;
+      }
+    } catch (err) {
+      statusEl.innerText = "Could not reach the server.";
+    }
+  }
+
+  async function loadQueue() {
+    const list = document.getElementById('queueList');
+    list.innerHTML = '<div class="empty-state">Loading…</div>';
+    try {
+      const res = await fetch('/admin/logs');
+      if (res.status === 401) { window.location.href = '/'; return; }
+      const rows = await res.json();
+      if (rows.length === 0) {
+        list.innerHTML = '<div class="empty-state">No flagged answers right now.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      rows.forEach(row => list.appendChild(renderQueueItem(row)));
+    } catch (err) {
+      list.innerHTML = '<div class="empty-state">Could not reach the server.</div>';
+    }
+  }
+
+  function renderQueueItem(row) {
+    const div = document.createElement('div');
+    div.className = 'queue-item';
+
+    const meta = document.createElement('div');
+    meta.className = 'queue-meta';
+    meta.innerHTML = `<span>${row.asked_by} · ${new Date(row.timestamp).toLocaleString()}</span><span>${row.model_used}</span>`;
+    div.appendChild(meta);
+
+    const qLabel = document.createElement('div');
+    qLabel.className = 'queue-label';
+    qLabel.innerText = 'Question';
+    div.appendChild(qLabel);
+
+    const qText = document.createElement('div');
+    qText.className = 'queue-text';
+    qText.innerText = row.prompt;
+    div.appendChild(qText);
+
+    const aLabel = document.createElement('div');
+    aLabel.className = 'queue-label';
+    aLabel.innerText = 'Answer';
+    div.appendChild(aLabel);
+
+    const aText = document.createElement('div');
+    aText.className = 'queue-text';
+    aText.innerText = row.output;
+    div.appendChild(aText);
+
+    const resolveRow = document.createElement('div');
+    resolveRow.className = 'resolve-row';
+    const notesInput = document.createElement('input');
+    notesInput.type = 'text';
+    notesInput.placeholder = 'Reviewer notes (optional)';
+    const resolveBtn = document.createElement('button');
+    resolveBtn.className = 'btn-primary';
+    resolveBtn.innerText = 'Mark reviewed';
+    resolveBtn.onclick = () => resolveLog(row.id, notesInput.value, resolveBtn, div);
+    resolveRow.appendChild(notesInput);
+    resolveRow.appendChild(resolveBtn);
+    div.appendChild(resolveRow);
+
+    return div;
+  }
+
+  async function resolveLog(logId, notes, btn, itemEl) {
+    btn.disabled = true;
+    btn.innerText = 'Saving…';
+    try {
+      const res = await fetch(`/admin/logs/${logId}/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes })
+      });
+      if (res.ok) {
+        itemEl.remove();
+      } else {
+        btn.disabled = false;
+        btn.innerText = 'Mark reviewed';
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerText = 'Mark reviewed';
+    }
+  }
+
+  loadMe();
+</script>
+</body>
+</html>

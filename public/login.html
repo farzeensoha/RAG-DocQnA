@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Q&A — Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #12161c;
+    --panel: #181e26;
+    --panel-raised: #1f2630;
+    --rule: #2a323d;
+    --paper: #ece7db;
+    --paper-dim: #a9a296;
+    --brass: #c9a050;
+    --brass-dim: #8a6f3a;
+    --brass-soft: rgba(201, 160, 80, 0.12);
+    --danger: #c96050;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(1200px 600px at 15% -10%, rgba(201,160,80,0.06), transparent 60%), var(--ink);
+    color: var(--paper);
+    font-family: 'Public Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .serif { font-family: 'Fraunces', serif; }
+  .frame {
+    width: 100%;
+    max-width: 380px;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    padding: 30px 28px;
+    box-shadow: 0 30px 80px -30px rgba(0,0,0,0.6);
+  }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .mark {
+    font-size: 11px;
+    color: var(--brass);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+    display: block;
+    margin-bottom: 22px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--paper-dim);
+    margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    background: var(--panel-raised);
+    border: 1px solid var(--rule);
+    border-radius: 9px;
+    padding: 11px 13px;
+    color: var(--paper);
+    font-size: 14px;
+    font-family: 'Public Sans', sans-serif;
+    outline: none;
+    margin-bottom: 16px;
+    transition: border-color 0.2s ease;
+  }
+  input:focus { border-color: var(--brass-dim); }
+  .btn-primary {
+    width: 100%;
+    padding: 11px 18px;
+    border-radius: 7px;
+    background: var(--brass);
+    color: #1a1408;
+    font-weight: 600;
+    font-size: 13.5px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.2s ease;
+  }
+  .btn-primary:hover { background: #d9af5c; }
+  .btn-primary:active { transform: scale(0.98); }
+  .error {
+    color: var(--danger);
+    font-size: 12.5px;
+    margin: -6px 0 14px;
+    min-height: 16px;
+  }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <h1 class="serif">Reading&nbsp;Room</h1>
+    <span class="mark">doc / q&amp;a</span>
+    <form id="loginForm">
+      <label for="username">Username</label>
+      <input type="text" id="username" autocomplete="username" required>
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password" required>
+      <div class="error" id="error"></div>
+      <button type="submit" class="btn-primary">Sign in</button>
+    </form>
+  </div>
+
+<script>
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const errorEl = document.getElementById('error');
+    errorEl.innerText = '';
+
+    try {
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        window.location.href = data.role === 'admin' ? '/admin' : '/app';
+      } else {
+        errorEl.innerText = data.detail || 'Sign in failed.';
+      }
+    } catch (err) {
+      errorEl.innerText = 'Could not reach the server.';
+    }
+  });
+</script>
+</body>
+</html>
