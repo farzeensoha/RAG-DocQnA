@@ -10,3 +10,4 @@ sentence-transformers
 pypdf
 langchain-groq
 langchain-chroma
+itsdangerous
